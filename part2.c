@@ -157,7 +157,14 @@ int main(int argc, const char *argv[])
   while (fgets(buffer, BUFFER_SIZE, input_fp) != NULL) {
     total_addresses++;
     int logical_address = atoi(buffer);
-    
+   
+    /*
+    if (total_addresses %20 == 0) {
+      for (int i = 0; i < MEMORY_PAGE_FRAME; i++) {
+        printf("i = %d, lru = %d\n", i, lruTable[i]);
+      }
+    }
+    */
 
     /* TODO 
     / Calculate the page offset and logical page number from logical_address */
@@ -198,6 +205,7 @@ int main(int argc, const char *argv[])
             free_page = free_page % MEMORY_PAGE_FRAME;
           }
           else {
+            //printf("Replacement happened.\n");
             int replacePage = findLru(lruTable);
             strncpy(&main_memory[replacePage*PAGE_SIZE], out, PAGE_SIZE);
             makeInvalid(replacePage); 
@@ -209,9 +217,9 @@ int main(int argc, const char *argv[])
           
       }
         
-      updateLruTable(lruTable, physical_page);
       add_to_tlb(logical_page, physical_page);
     }
+    updateLruTable(lruTable, physical_page);
     
     int physical_address = (physical_page << OFFSET_BITS) | offset;
     signed char value = main_memory[physical_page * PAGE_SIZE + offset];
@@ -234,6 +242,6 @@ int main(int argc, const char *argv[])
     if (pagetable[i] != -1 ) count++;
   }
   printf("Count = %d\n", count);
-
+  
   return 0;
 }

@@ -20,5 +20,6 @@ runPart2LRU:
 	gcc part2.c -o part2
 	./part2 BACKING_STORE.bin adresses.txt -p 1
 
-
+runPart2Log:
+	./part2 BACKING_STORE.bin adresses.txt -p 1 > log.txt &
 
