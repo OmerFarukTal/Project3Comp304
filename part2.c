@@ -11,8 +11,8 @@
 #include <string.h>
 
 #define TLB_SIZE 16
-#define PAGES 1024
-#define PAGE_MASK 0x000FFC00
+#define PAGES 256
+#define PAGE_MASK 0x0003FC00
 
 #define PAGE_SIZE 1024
 #define OFFSET_BITS 10
@@ -35,11 +35,42 @@ int tlbindex = 0;
 
 // pagetable[logical_page] is the physical page number for logical page. Value is -1 if that logical page isn't yet in the table.
 int pagetable[PAGES];
+int lruTable[PAGES];
 
 signed char main_memory[MEMORY_SIZE];
 
 // Pointer to memory mapped backing file
 signed char *backing;
+
+void initializeLruTable(int* table) {
+    for (int i = 0; i < PAGES; i++) {
+        table[i] = PAGES -(i + 1);
+    }
+}
+
+int findLru(int* table ) {
+    int returnIndex = 0;
+    for (int i = 0; i < PAGES; i++ ) {
+        if (table[i] == PAGES -1) {
+            returnIndex = i;
+        }
+    }
+    return returnIndex;
+}
+
+void updateLruTable(int* table, int lastTouched) {
+    int usageOfTouched = table[lastTouched];
+    for (int i = 0; i < PAGES; i ++) {
+        if (i == lastTouched) {
+            table[i] = 0;
+            continue;
+        }
+        if (table[i] < usageOfTouched) {
+            table[i]++;
+            continue;
+        }
+    }
+}
 
 int max(int a, int b)
 {
@@ -73,11 +104,20 @@ void add_to_tlb(unsigned char logical, unsigned char physical) {
 
 int main(int argc, const char *argv[])
 {
+  /*
   if (argc != 3) {
     fprintf(stderr, "Usage ./virtmem backingstore input\n");
     exit(1);
   }
+  */
+
+  int replacementPolicy;
+  for(int i=1; i<argc; i++){
+    if(!strcmp(argv[i], "-p")) {replacementPolicy = atoi(argv[++i]);}
+  }
   
+  printf("Replacement Poicy %d\n", replacementPolicy);
+
   const char *backing_filename = argv[1]; 
   int backing_fd = open(backing_filename, O_RDONLY);
   backing = mmap(0, MEMORY_SIZE, PROT_READ, MAP_PRIVATE, backing_fd, 0); 
@@ -90,7 +130,8 @@ int main(int argc, const char *argv[])
   for (i = 0; i < PAGES; i++) {
     pagetable[i] = -1;
   }
-  
+  initializeLruTable(lruTable); 
+
   // Character buffer for reading lines of input file.
   char buffer[BUFFER_SIZE];
   
@@ -131,16 +172,39 @@ int main(int argc, const char *argv[])
           char* readFromFile = backing + logical_page * PAGE_SIZE; 
           char out[PAGE_SIZE];
           strncpy(out, readFromFile, PAGE_SIZE);
-
-          strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
-          pagetable[logical_page] = free_page;
           
-          page_faults++;
-          physical_page = free_page;
-          free_page++;
+          
+          if (replacementPolicy == 0) {
+            strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
+            pagetable[logical_page] = free_page;
+
+            page_faults++;
+            physical_page = free_page;
+            free_page++;
+            free_page = free_page % PAGES;
+          }
+          else {
+            if (free_page < 256) {
+              strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
+              pagetable[logical_page] = free_page;
+
+              page_faults++;
+              physical_page = free_page;
+              free_page++;
+            }
+            else {
+              int replacePage = findLru(lruTable);
+              strncpy(&main_memory[replacePage*PAGE_SIZE], out, PAGE_SIZE);
+              pagetable[logical_page] = replacePage;
+
+              page_faults++;
+              physical_page = replacePage;
+            }
+          }
           
       }
 
+      updateLruTable(lruTable, physical_page);
       add_to_tlb(logical_page, physical_page);
     }
     
