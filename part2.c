@@ -74,6 +74,15 @@ void updateLruTable(int* table, int lastTouched) {
     }
 }
 
+void makeInvalid(int physical_adress) {
+    for (int i = 0; i < PAGES; i++) {
+        if (pagetable[i] == physical_adress) {
+            pagetable[i] = -1;
+            break;
+        }
+    }
+}
+
 int max(int a, int b)
 {
   if (a > b)
@@ -180,6 +189,7 @@ int main(int argc, const char *argv[])
           
           if (replacementPolicy == 0) {
             strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
+            makeInvalid(free_page); 
             pagetable[logical_page] = free_page;
 
             page_faults++;
@@ -188,23 +198,13 @@ int main(int argc, const char *argv[])
             free_page = free_page % MEMORY_PAGE_FRAME;
           }
           else {
-            /*
-            if (free_page < 256) {
-              strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
-              pagetable[logical_page] = free_page;
+            int replacePage = findLru(lruTable);
+            strncpy(&main_memory[replacePage*PAGE_SIZE], out, PAGE_SIZE);
+            makeInvalid(replacePage); 
+            pagetable[logical_page] = replacePage;
 
-              page_faults++;
-              physical_page = free_page;
-              free_page++;
-            }*/
-            //else {
-              int replacePage = findLru(lruTable);
-              strncpy(&main_memory[replacePage*PAGE_SIZE], out, PAGE_SIZE);
-              pagetable[logical_page] = replacePage;
-
-              page_faults++;
-              physical_page = replacePage;
-            //}
+            page_faults++;
+            physical_page = replacePage;
           }
           
       }
@@ -228,6 +228,12 @@ int main(int argc, const char *argv[])
   printf("Page Fault Rate = %.3f\n", page_faults / (1. * total_addresses));
   printf("TLB Hits = %d\n", tlb_hits);
   printf("TLB Hit Rate = %.3f\n", tlb_hits / (1. * total_addresses));
-  
+    
+  int count = 0;
+  for (int i = 0; i < PAGES; i++) {
+    if (pagetable[i] != -1 ) count++;
+  }
+  printf("Count = %d\n", count);
+
   return 0;
 }
