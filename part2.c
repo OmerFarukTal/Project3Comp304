@@ -11,14 +11,15 @@
 #include <string.h>
 
 #define TLB_SIZE 16
-#define PAGES 256
-#define PAGE_MASK 0x0003FC00
+#define PAGES 1024
+#define PAGE_MASK 0x000FFC00
 
 #define PAGE_SIZE 1024
 #define OFFSET_BITS 10
 #define OFFSET_MASK 0x000003FF
 
-#define MEMORY_SIZE PAGES * PAGE_SIZE
+#define MEMORY_PAGE_FRAME 256
+#define MEMORY_SIZE MEMORY_PAGE_FRAME * PAGE_SIZE
 
 // Max number of characters per line of input file to read.
 #define BUFFER_SIZE 10
@@ -35,7 +36,7 @@ int tlbindex = 0;
 
 // pagetable[logical_page] is the physical page number for logical page. Value is -1 if that logical page isn't yet in the table.
 int pagetable[PAGES];
-int lruTable[PAGES];
+int lruTable[MEMORY_PAGE_FRAME];
 
 signed char main_memory[MEMORY_SIZE];
 
@@ -43,16 +44,17 @@ signed char main_memory[MEMORY_SIZE];
 signed char *backing;
 
 void initializeLruTable(int* table) {
-    for (int i = 0; i < PAGES; i++) {
-        table[i] = PAGES -(i + 1);
+    for (int i = 0; i < MEMORY_PAGE_FRAME; i++) {
+        table[i] = MEMORY_PAGE_FRAME -(i + 1);
     }
 }
 
 int findLru(int* table ) {
     int returnIndex = 0;
-    for (int i = 0; i < PAGES; i++ ) {
-        if (table[i] == PAGES -1) {
+    for (int i = 0; i < MEMORY_PAGE_FRAME; i++ ) {
+        if (table[i] == MEMORY_PAGE_FRAME -1) {
             returnIndex = i;
+            break;
         }
     }
     return returnIndex;
@@ -60,7 +62,7 @@ int findLru(int* table ) {
 
 void updateLruTable(int* table, int lastTouched) {
     int usageOfTouched = table[lastTouched];
-    for (int i = 0; i < PAGES; i ++) {
+    for (int i = 0; i < MEMORY_PAGE_FRAME; i ++) {
         if (i == lastTouched) {
             table[i] = 0;
             continue;
@@ -141,7 +143,7 @@ int main(int argc, const char *argv[])
   int page_faults = 0;
   
   // Number of the next unallocated physical page in main memory
-  unsigned char free_page = 0;
+  unsigned int free_page = 0; // unsigned char (IT was initally)
   
   while (fgets(buffer, BUFFER_SIZE, input_fp) != NULL) {
     total_addresses++;
@@ -164,7 +166,9 @@ int main(int argc, const char *argv[])
     }
     // TLB miss
     else {
-      physical_page = pagetable[logical_page];
+      //printf("HEREREEE1 \n");
+      physical_page = pagetable[logical_page]; // SIKINTILI KISIM
+      //printf("HEREREEE2 \n");
       
       // Page fault
       if (physical_page == -1) {
@@ -181,9 +185,10 @@ int main(int argc, const char *argv[])
             page_faults++;
             physical_page = free_page;
             free_page++;
-            free_page = free_page % PAGES;
+            free_page = free_page % MEMORY_PAGE_FRAME;
           }
           else {
+            /*
             if (free_page < 256) {
               strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
               pagetable[logical_page] = free_page;
@@ -191,19 +196,19 @@ int main(int argc, const char *argv[])
               page_faults++;
               physical_page = free_page;
               free_page++;
-            }
-            else {
+            }*/
+            //else {
               int replacePage = findLru(lruTable);
               strncpy(&main_memory[replacePage*PAGE_SIZE], out, PAGE_SIZE);
               pagetable[logical_page] = replacePage;
 
               page_faults++;
               physical_page = replacePage;
-            }
+            //}
           }
           
       }
-
+        
       updateLruTable(lruTable, physical_page);
       add_to_tlb(logical_page, physical_page);
     }
