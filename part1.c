@@ -100,7 +100,7 @@ int main(int argc, const char *argv[])
   int page_faults = 0;
   
   // Number of the next unallocated physical page in main memory
-  unsigned char free_page = 0;
+  unsigned int free_page = 0; // unsigned char (It was initally)
   
   while (fgets(buffer, BUFFER_SIZE, input_fp) != NULL) {
     total_addresses++;
@@ -128,7 +128,14 @@ int main(int argc, const char *argv[])
       // Page fault
       if (physical_page == -1) {
           /* TODO */
-          char* readFromFile = backing + logical_page * PAGE_SIZE; 
+          //char* readFromFile = backing + logical_page * PAGE_SIZE; 
+          char readFromFile[PAGE_SIZE];
+
+          FILE *ptr = fopen("BACKING_STORE.bin", "rb");
+          fseek(ptr, logical_page * PAGE_SIZE, SEEK_SET);
+          fread(readFromFile, PAGE_SIZE, 1, ptr);
+          fclose(ptr); 
+          
           char out[PAGE_SIZE];
           strncpy(out, readFromFile, PAGE_SIZE);
 
