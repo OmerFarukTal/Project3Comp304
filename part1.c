@@ -137,9 +137,10 @@ int main(int argc, const char *argv[])
           fclose(ptr); 
           
           char out[PAGE_SIZE];
-          strncpy(out, readFromFile, PAGE_SIZE);
+          strncpy(out, readFromFile, PAGE_SIZE); // memcpy
+          memcpy(&main_memory[free_page*PAGE_SIZE], readFromFile, PAGE_SIZE);
 
-          strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
+          //strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
           pagetable[logical_page] = free_page;
           
           page_faults++;
@@ -154,10 +155,11 @@ int main(int argc, const char *argv[])
     int physical_address = (physical_page << OFFSET_BITS) | offset;
     signed char value = main_memory[physical_page * PAGE_SIZE + offset];
     
+    /*
     printf("LOGİCAL ADRESS = %d", logical_address);
     printf(" LOGİCAL page = %d", logical_page);
     printf(" PHYSICAL page = %d", physical_page);
-    printf(" OFFSET = %d\n", offset);
+    printf(" OFFSET = %d\n", offset); */
     printf("Virtual address: %d Physical address: %d Value: %d\n", logical_address, physical_address, value);
   }
   
