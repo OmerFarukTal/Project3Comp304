@@ -131,7 +131,12 @@ int main(int argc, const char *argv[])
           page_faults++;
           
           memcpy(&main_memory[free_page*PAGE_SIZE], backing+logical_page*PAGE_SIZE, PAGE_SIZE);
-          
+         
+          /*
+          signed char value2 = *(backing + logical_page*PAGE_SIZE + offset);
+          printf("Mein Logicla Value %d\n", value2);
+          printf("Mein Value %d\n", main_memory[free_page*PAGE_SIZE + offset]);
+          */
           physical_page = free_page;
           pagetable[logical_page] = physical_page;
           

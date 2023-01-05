@@ -60,7 +60,7 @@ int findLru(int* table ) {
     return returnIndex;
 }
 
-void updateLruTable(int* table, int lastTouched) {
+void updateLruTable(int* table, unsigned char lastTouched) { // int lastTouched 
     int usageOfTouched = table[lastTouched];
     for (int i = 0; i < MEMORY_PAGE_FRAME; i ++) {
         if (i == lastTouched) {
@@ -74,7 +74,7 @@ void updateLruTable(int* table, int lastTouched) {
     }
 }
 
-void makeInvalid(int physical_adress) {
+void makeInvalid(unsigned char physical_adress) { // int physical_adress
     for (int i = 0; i < PAGES; i++) {
         if (pagetable[i] == physical_adress) {
             pagetable[i] = -1;
@@ -131,7 +131,7 @@ int main(int argc, const char *argv[])
 
   const char *backing_filename = argv[1]; 
   int backing_fd = open(backing_filename, O_RDONLY);
-  backing = mmap(0, MEMORY_SIZE, PROT_READ, MAP_PRIVATE, backing_fd, 0); 
+  backing = mmap(0, 1024*1024, PROT_READ, MAP_PRIVATE, backing_fd, 0); // 0, MEMORY_SIZE
   
   const char *input_filename = argv[2];
   FILE *input_fp = fopen(input_filename, "r");
@@ -193,8 +193,13 @@ int main(int argc, const char *argv[])
           
           
           if (replacementPolicy == 0) {
-            memcpy(main_memory+free_page*PAGE_SIZE, backing + logical_page*PAGE_SIZE, PAGE_SIZE);
+            memcpy(&main_memory[free_page*PAGE_SIZE], backing + logical_page*PAGE_SIZE, PAGE_SIZE);
             
+            /*
+            signed char value2 = *(backing + logical_page*PAGE_SIZE+offset);
+            printf("Mein Logical Value: %d\n", value2);
+            printf("Mein Value: %d\n", main_memory[free_page*PAGE_SIZE + offset]);
+            */
             makeInvalid(free_page); 
 
             physical_page = free_page;
@@ -207,7 +212,7 @@ int main(int argc, const char *argv[])
             //printf("Replacement happened.\n");
             int replacePage = findLru(lruTable);
             
-            memcpy(main_memory+replacePage*PAGE_SIZE, backing + logical_page*PAGE_SIZE, PAGE_SIZE);
+            memcpy(&main_memory[replacePage*PAGE_SIZE], backing + logical_page*PAGE_SIZE, PAGE_SIZE);
             
             makeInvalid(replacePage); 
 
