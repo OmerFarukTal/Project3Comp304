@@ -189,30 +189,30 @@ int main(int argc, const char *argv[])
       // Page fault
       if (physical_page == -1) {
           /* TODO */
-          char* readFromFile = backing + logical_page * PAGE_SIZE; 
-          char out[PAGE_SIZE];
-          strncpy(out, readFromFile, PAGE_SIZE);
+          page_faults++;
           
           
           if (replacementPolicy == 0) {
-            strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
+            memcpy(main_memory+free_page*PAGE_SIZE, backing + logical_page*PAGE_SIZE, PAGE_SIZE);
+            
             makeInvalid(free_page); 
-            pagetable[logical_page] = free_page;
 
-            page_faults++;
             physical_page = free_page;
+            pagetable[logical_page] = physical_page;
+            
             free_page++;
             free_page = free_page % MEMORY_PAGE_FRAME;
           }
           else {
             //printf("Replacement happened.\n");
             int replacePage = findLru(lruTable);
-            strncpy(&main_memory[replacePage*PAGE_SIZE], out, PAGE_SIZE);
+            
+            memcpy(main_memory+replacePage*PAGE_SIZE, backing + logical_page*PAGE_SIZE, PAGE_SIZE);
+            
             makeInvalid(replacePage); 
-            pagetable[logical_page] = replacePage;
 
-            page_faults++;
             physical_page = replacePage;
+            pagetable[logical_page] = physical_page;
           }
           
       }
@@ -223,11 +223,12 @@ int main(int argc, const char *argv[])
     
     int physical_address = (physical_page << OFFSET_BITS) | offset;
     signed char value = main_memory[physical_page * PAGE_SIZE + offset];
-    
+   
+    /*
     printf("LOGİCAL ADRESS = %d", logical_address);
     printf(" LOGİCAL page = %d", logical_page);
     printf(" PHYSICAL page = %d", physical_page);
-    printf(" OFFSET = %d\n", offset);
+    printf(" OFFSET = %d\n", offset);*/
     printf("Virtual address: %d Physical address: %d Value: %d\n", logical_address, physical_address, value);
   }
   

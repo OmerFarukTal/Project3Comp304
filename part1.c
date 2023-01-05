@@ -128,23 +128,13 @@ int main(int argc, const char *argv[])
       // Page fault
       if (physical_page == -1) {
           /* TODO */
-          //char* readFromFile = backing + logical_page * PAGE_SIZE; 
-          char readFromFile[PAGE_SIZE];
-
-          FILE *ptr = fopen("BACKING_STORE.bin", "rb");
-          fseek(ptr, logical_page * PAGE_SIZE, SEEK_SET);
-          fread(readFromFile, PAGE_SIZE, 1, ptr);
-          fclose(ptr); 
-          
-          char out[PAGE_SIZE];
-          strncpy(out, readFromFile, PAGE_SIZE); // memcpy
-          memcpy(&main_memory[free_page*PAGE_SIZE], readFromFile, PAGE_SIZE);
-
-          //strncpy(&main_memory[free_page*PAGE_SIZE], out, PAGE_SIZE);
-          pagetable[logical_page] = free_page;
-          
           page_faults++;
+          
+          memcpy(&main_memory[free_page*PAGE_SIZE], backing+logical_page*PAGE_SIZE, PAGE_SIZE);
+          
           physical_page = free_page;
+          pagetable[logical_page] = physical_page;
+          
           free_page++;
           
       }
