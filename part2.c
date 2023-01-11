@@ -113,6 +113,14 @@ void add_to_tlb(unsigned char logical, unsigned char physical) {
     tlbindex = tlbindex % TLB_SIZE;
 }
 
+void evict_and_replace_tlb(unsigned char logical, unsigned char physical) {
+    for (int i = 0; i < TLB_SIZE; i++) {
+        if (tlb[i].physical == physical) {
+            tlb[i].logical = logical;
+        }
+    }
+}
+
 int main(int argc, const char *argv[])
 {
   /*
@@ -185,7 +193,10 @@ int main(int argc, const char *argv[])
       //printf("HEREREEE1 \n");
       physical_page = pagetable[logical_page]; // SIKINTILI KISIM
       //printf("HEREREEE2 \n");
-      
+     
+
+      int flag = 0;
+
       // Page fault
       if (physical_page == -1) {
           /* TODO */
@@ -219,10 +230,12 @@ int main(int argc, const char *argv[])
             physical_page = replacePage;
             pagetable[logical_page] = physical_page;
           }
-          
+            
+          evict_and_replace_tlb(logical_page, physical_page);
+          flag = 1;
       }
-        
-      add_to_tlb(logical_page, physical_page);
+      if (flag != 1) 
+        add_to_tlb(logical_page, physical_page);
     }
     updateLruTable(lruTable, physical_page);
     
